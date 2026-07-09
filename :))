@@ -1,0 +1,567 @@
+_G.ClaimRewards = true
+_G.AutoUpgradeConfig = {
+    ["Pursuit"] = {{path = 1, count = 3}},
+    ["Hacker"] = {{path = 1, count = 4}},
+    ["EvolvedJuggernaut"] = {{path = 1, count = 4}},
+}
+
+local Library = loadstring(game:HttpGet("https://github.com/jenywexi/-/blob/main/%D0%BB%D0%B2%D0%BB%D0%B2"))()
+if not Library then
+    warn("Failed to load UI Library!")
+    return
+end
+
+local player = game:GetService("Players").LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local UIS = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
+local Camera = Workspace.CurrentCamera
+local RemoteFunction = ReplicatedStorage:WaitForChild("RemoteFunction")
+local isUpgrading = false
+
+task.wait(1)
+
+local TDS = loadstring(game:HttpGet("https://raw.githubusercontent.com/raxs0420/test/refs/heads/main/library%20new/new%20ui%20test%20test.lua"))()
+
+local screenGui = Library:CreateScreenGui("TDS_UI", playerGui)
+
+local mainWindow = Library:CreateWindow(
+    screenGui,
+    "TDS CONTROLS",
+    UDim2.new(0, Library:ScaleX(40), 0, Library:ScaleY(57)),
+    UDim2.new(0, Library:ScaleX(10), 0, Library:ScaleY(5))
+)
+
+if not UIS.TouchEnabled then
+    Library:MakeDraggable(mainWindow, mainWindow)
+end
+
+local minimizeButton = Library:CreateMinimizeButton(screenGui, mainWindow)
+
+local leftPanel = Library:CreateFrame(
+    mainWindow,
+    UDim2.new(0, Library:ScaleX(12), 1, -Library:ScaleY(10)),
+    UDim2.new(0, Library:ScaleX(1), 0, Library:ScaleY(1)),
+    false,
+    Library.Colors.BackgroundDark
+)
+
+local tabHeight = Library:ScaleY(5)
+local tabSpacing = Library:ScaleY(1.5)
+local startY = Library:ScaleY(1)
+
+local switcherTab = Library:CreateButton(
+    leftPanel,
+    "SWITCHER",
+    UDim2.new(1, -Library:ScaleX(1), 0, tabHeight),
+    UDim2.new(0, Library:ScaleX(0.5), 0, startY),
+    Library.Colors.Accent
+)
+
+local managerTab = Library:CreateButton(
+    leftPanel,
+    "MANAGER",
+    UDim2.new(1, -Library:ScaleX(1), 0, tabHeight),
+    UDim2.new(0, Library:ScaleX(0.5), 0, startY + tabHeight + tabSpacing),
+    Library.Colors.BackgroundLight
+)
+
+local autoTab = Library:CreateButton(
+    leftPanel,
+    "AUTOMATION",
+    UDim2.new(1, -Library:ScaleX(1), 0, tabHeight),
+    UDim2.new(0, Library:ScaleX(0.5), 0, startY + (tabHeight + tabSpacing) * 2),
+    Library.Colors.BackgroundLight
+)
+
+local mapsTab = Library:CreateButton(
+    leftPanel,
+    "MAPS",
+    UDim2.new(1, -Library:ScaleX(1), 0, tabHeight),
+    UDim2.new(0, Library:ScaleX(0.5), 0, startY + (tabHeight + tabSpacing) * 3),
+    Library.Colors.BackgroundLight
+)
+
+local rightPanel = Library:CreateFrame(
+    mainWindow,
+    UDim2.new(1, -Library:ScaleX(15), 1, -Library:ScaleY(10)),
+    UDim2.new(0, Library:ScaleX(14), 0, Library:ScaleY(1)),
+    true
+)
+
+local slotsPanel = Library:CreateFrame(
+    mainWindow,
+    UDim2.new(1, -Library:ScaleX(2), 0, Library:ScaleY(10)),
+    UDim2.new(0, Library:ScaleX(1), 1, -Library:ScaleY(11)),
+    false,
+    Library.Colors.BackgroundDarker
+)
+Library:AddCorner(slotsPanel, 6)
+Library:AddStroke(slotsPanel, 1, Library.Colors.BorderLight)
+
+local slotButtons = {}
+local slotFilled = {false, false, false, false, false}
+local slotNames = {"", "", "", "", ""}
+local lastSelectedSlot = nil
+
+local slotWidth = Library:ScaleX(8.2)
+local slotHeight = Library:ScaleY(3.5)
+
+local startX = Library:ScaleX(1.8)
+local slotSpacing = Library:ScaleX(0.8)
+
+local row1Y = Library:ScaleY(1.5)
+
+for i = 1, 3 do
+    local slotBtn = Instance.new("TextButton")
+    slotBtn.Name = "Slot" .. i
+    slotBtn.Size = UDim2.new(0, slotWidth, 0, slotHeight)
+    slotBtn.Position = UDim2.new(0, startX + ((i-1) * (slotWidth + slotSpacing)), 0, row1Y)
+    slotBtn.BackgroundColor3 = Library.Colors.BackgroundLight
+    slotBtn.Text = "[EMPTY]"
+    slotBtn.TextColor3 = Library.Colors.TextDim
+    slotBtn.Font = Library.Fonts.Bold
+    slotBtn.TextSize = Library:ScaleY(0.9)
+    slotBtn.TextScaled = false
+    slotBtn.TextWrapped = true
+    slotBtn.Parent = slotsPanel
+    slotBtn.AutoButtonColor = false
+    slotBtn.ClipsDescendants = true
+
+    Library:AddCorner(slotBtn, 4)
+    Library:AddStroke(slotBtn, 1, Library.Colors.Border)
+
+    slotBtn.MouseButton1Click:Connect(function()
+        if lastSelectedSlot then
+            if slotFilled[lastSelectedSlot] then
+                slotButtons[lastSelectedSlot].BackgroundColor3 = Library.Colors.Success
+            else
+                slotButtons[lastSelectedSlot].BackgroundColor3 = Library.Colors.BackgroundLight
+            end
+        end
+        lastSelectedSlot = i
+        slotBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    end)
+
+    slotButtons[i] = slotBtn
+end
+
+local row2Y = Library:ScaleY(6)
+
+for i = 4, 5 do
+    local colNum = i - 3
+    local slotBtn = Instance.new("TextButton")
+    slotBtn.Name = "Slot" .. i
+    slotBtn.Size = UDim2.new(0, slotWidth, 0, slotHeight)
+    slotBtn.Position = UDim2.new(0, startX + ((colNum-1) * (slotWidth + slotSpacing)), 0, row2Y)
+    slotBtn.BackgroundColor3 = Library.Colors.BackgroundLight
+    slotBtn.Text = "[EMPTY]"
+    slotBtn.TextColor3 = Library.Colors.TextDim
+    slotBtn.Font = Library.Fonts.Bold
+    slotBtn.TextSize = Library:ScaleY(0.9)
+    slotBtn.TextScaled = false
+    slotBtn.TextWrapped = true
+    slotBtn.Parent = slotsPanel
+    slotBtn.AutoButtonColor = false
+    slotBtn.ClipsDescendants = true
+
+    Library:AddCorner(slotBtn, 4)
+    Library:AddStroke(slotBtn, 1, Library.Colors.Border)
+
+    slotBtn.MouseButton1Click:Connect(function()
+        if lastSelectedSlot then
+            if slotFilled[lastSelectedSlot] then
+                slotButtons[lastSelectedSlot].BackgroundColor3 = Library.Colors.Success
+            else
+                slotButtons[lastSelectedSlot].BackgroundColor3 = Library.Colors.BackgroundLight
+            end
+        end
+        lastSelectedSlot = i
+        slotBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    end)
+
+    slotButtons[i] = slotBtn
+end
+
+local function GetEquippedTowers()
+    local towers = {}
+    local StateReplicators = ReplicatedStorage:FindFirstChild("StateReplicators")
+
+    if StateReplicators then
+        for _, folder in ipairs(StateReplicators:GetChildren()) do
+            if folder.Name == "PlayerReplicator" and folder:GetAttribute("UserId") == player.UserId then
+                local equipped = folder:GetAttribute("EquippedTowers")
+                if type(equipped) == "string" then
+                    local CleanedJson = equipped:match("%[.*%]") 
+                    local success, TowerTable = pcall(function()
+                        return HttpService:JSONDecode(CleanedJson)
+                    end)
+
+                    if success and type(TowerTable) == "table" then
+                        for i = 1, 5 do
+                            if TowerTable[i] then
+                                table.insert(towers, TowerTable[i])
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return #towers > 0 and towers or {}
+end
+
+local function AssignEquippedTowersToSlots()
+    local equippedTowers = GetEquippedTowers()
+
+    if #equippedTowers > 0 then
+        for i = 1, math.min(5, #equippedTowers) do
+            if equippedTowers[i] and equippedTowers[i] ~= "None" then
+                slotFilled[i] = true
+                slotNames[i] = equippedTowers[i]
+                slotButtons[i].BackgroundColor3 = Library.Colors.Success
+                slotButtons[i].Text = equippedTowers[i]
+                slotButtons[i].TextColor3 = Library.Colors.Text
+            end
+        end
+    end
+end
+
+task.wait(0.5)
+AssignEquippedTowersToSlots()
+
+local function SetupEquipmentListener()
+    local StateReplicators = ReplicatedStorage:FindFirstChild("StateReplicators")
+    if StateReplicators then
+        local function onEquipmentChanged()
+            task.wait(0.2)
+            for i = 1, 5 do
+                if not (lastSelectedSlot == i) then
+                    slotFilled[i] = false
+                    slotNames[i] = ""
+                    slotButtons[i].BackgroundColor3 = Library.Colors.BackgroundLight
+                    slotButtons[i].Text = "[EMPTY]"
+                    slotButtons[i].TextColor3 = Library.Colors.TextDim
+                end
+            end
+            AssignEquippedTowersToSlots()
+        end
+
+        for _, folder in ipairs(StateReplicators:GetChildren()) do
+            if folder.Name == "PlayerReplicator" and folder:GetAttribute("UserId") == player.UserId then
+                folder:GetAttributeChangedSignal("EquippedTowers"):Connect(onEquipmentChanged)
+            end
+        end
+
+        StateReplicators.ChildAdded:Connect(function(newFolder)
+            task.wait(0.1)
+            if newFolder.Name == "PlayerReplicator" and newFolder:GetAttribute("UserId") == player.UserId then
+                newFolder:GetAttributeChangedSignal("EquippedTowers"):Connect(onEquipmentChanged)
+            end
+        end)
+    end
+end
+
+SetupEquipmentListener()
+
+local buttonWidth = Library:ScaleX(7)
+local buttonHeight = Library:ScaleY(4.2)
+local buttonStartX = slotsPanel.AbsoluteSize.X - Library:ScaleX(7.5)
+local totalButtonHeight = (buttonHeight * 2)
+local buttonStartY = (Library:ScaleY(10) - totalButtonHeight) / 2
+
+local loadoutBtn = Instance.new("TextButton")
+loadoutBtn.Name = "LoadoutBtn"
+loadoutBtn.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+loadoutBtn.Position = UDim2.new(0, buttonStartX, 0, buttonStartY)
+loadoutBtn.BackgroundColor3 = Library.Colors.Accent
+loadoutBtn.Text = "LOADOUT"
+loadoutBtn.TextColor3 = Library.Colors.Text
+loadoutBtn.Font = Library.Fonts.Bold
+loadoutBtn.TextSize = Library:ScaleY(1.3)
+loadoutBtn.Parent = slotsPanel
+loadoutBtn.AutoButtonColor = false
+
+Library:AddCorner(loadoutBtn, 4)
+Library:AddStroke(loadoutBtn, 1, Library.Colors.Border)
+
+local function TDS_Loadout(...)
+    local towers = {...}
+    local remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
+    local StateReplicators = ReplicatedStorage:FindFirstChild("StateReplicators")
+    local LocalPlayer = player
+
+    local CurrentlyEquipped = {}
+
+    if StateReplicators then
+        for _, folder in ipairs(StateReplicators:GetChildren()) do
+            if folder.Name == "PlayerReplicator" and folder:GetAttribute("UserId") == LocalPlayer.UserId then
+                local EquippedAttr = folder:GetAttribute("EquippedTowers")
+                if type(EquippedAttr) == "string" then
+                    local CleanedJson = EquippedAttr:match("%[.*%]") 
+                    local DecodeSuccess, decoded = pcall(function()
+                        return HttpService:JSONDecode(CleanedJson)
+                    end)
+
+                    if DecodeSuccess and type(decoded) == "table" then
+                        CurrentlyEquipped = decoded
+                    end
+                end
+            end
+        end
+    end
+
+    local desiredTowers = {}
+    for _, towerName in ipairs(towers) do
+        if towerName and towerName ~= "" then
+            desiredTowers[towerName] = true
+        end
+    end
+
+    for _, CurrentTower in ipairs(CurrentlyEquipped) do
+        if CurrentTower ~= "None" and not desiredTowers[CurrentTower] then
+            local UnequipDone = false
+            repeat
+                local ok = pcall(function()
+                    remote:InvokeServer("Inventory", "Unequip", "tower", CurrentTower)
+                    task.wait(0.3)
+                end)
+                if ok then UnequipDone = true else task.wait(0.2) end
+            until UnequipDone
+        end
+    end
+
+    task.wait(0.5)
+
+    for _, TowerName in ipairs(towers) do
+        if TowerName and TowerName ~= "" then
+            local alreadyEquipped = false
+            for _, equippedTower in ipairs(CurrentlyEquipped) do
+                if equippedTower == TowerName then
+                    alreadyEquipped = true
+                    break
+                end
+            end
+
+            if not alreadyEquipped then
+                local EquipSuccess = false
+                repeat
+                    local ok = pcall(function()
+                        remote:InvokeServer("Inventory", "Equip", "tower", TowerName)
+                        task.wait(0.3)
+                    end)
+                    if ok then EquipSuccess = true else task.wait(0.2) end
+                until EquipSuccess
+            end
+        end
+    end
+
+    task.wait(0.5)
+    return true
+end
+
+loadoutBtn.MouseButton1Click:Connect(function()
+    local towersToEquip = {}
+    for i = 1, 5 do
+        if slotFilled[i] and slotNames[i] ~= "" then
+            table.insert(towersToEquip, slotNames[i])
+        end
+    end
+
+    if #towersToEquip > 0 then
+        local originalColor = loadoutBtn.BackgroundColor3
+        loadoutBtn.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+        loadoutBtn.Text = "EQUIPPING..."
+
+        local success, result = pcall(function()
+            return TDS_Loadout(unpack(towersToEquip))
+        end)
+
+        if success and result then
+            loadoutBtn.Text = "SUCCESS!"
+            task.wait(1)
+            loadoutBtn.Text = "LOADOUT"
+        else
+            loadoutBtn.Text = "FAILED"
+            task.wait(1)
+            loadoutBtn.Text = "LOADOUT"
+        end
+
+        loadoutBtn.BackgroundColor3 = originalColor
+    else
+        local originalColor = loadoutBtn.BackgroundColor3
+        loadoutBtn.BackgroundColor3 = Library.Colors.Danger
+        loadoutBtn.Text = "NO TOWERS"
+        task.wait(1)
+        loadoutBtn.BackgroundColor3 = originalColor
+        loadoutBtn.Text = "LOADOUT"
+    end
+end)
+
+local placeToggle = Instance.new("TextButton")
+placeToggle.Name = "PlaceToggle"
+placeToggle.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+placeToggle.Position = UDim2.new(0, buttonStartX, 0, buttonStartY + buttonHeight)
+placeToggle.BackgroundColor3 = Library.Colors.Success
+placeToggle.Text = "PLACE ON"
+placeToggle.TextColor3 = Library.Colors.Text
+placeToggle.Font = Library.Fonts.Bold
+placeToggle.TextSize = Library:ScaleY(1.3)
+placeToggle.Parent = slotsPanel
+placeToggle.AutoButtonColor = false
+
+Library:AddCorner(placeToggle, 4)
+Library:AddStroke(placeToggle, 1, Library.Colors.Border)
+
+local placingEnabled = true
+local isMobile = UIS.TouchEnabled
+local terrain = workspace.Terrain
+
+local function getWorldPositionPrecise(screenPosition)
+    if isMobile then
+        if terrain then
+            local success, pos = pcall(function()
+                return terrain:GetMousePosition(Camera, screenPosition)
+            end)
+            if success and pos then
+                return pos.X, pos.Y + 2, pos.Z
+            end
+        end
+
+        local ray = Camera:ScreenPointToRay(screenPosition.X, screenPosition.Y)
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+        raycastParams.FilterDescendantsInstances = {player.Character, Camera}
+        raycastParams.IgnoreWater = true
+
+        local raycastResult = Workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
+        if raycastResult then
+            local hitPoint = raycastResult.Position
+            return hitPoint.X, hitPoint.Y + 2, hitPoint.Z
+        end
+
+        local directions = {
+            ray.Direction,
+            Vector3.new(ray.Direction.X, ray.Direction.Y - 0.1, ray.Direction.Z),
+            Vector3.new(ray.Direction.X, ray.Direction.Y + 0.1, ray.Direction.Z)
+        }
+        for _, dir in ipairs(directions) do
+            local fallbackResult = Workspace:Raycast(ray.Origin, dir * 1000, raycastParams)
+            if fallbackResult then
+                return fallbackResult.Position.X, fallbackResult.Position.Y + 2, fallbackResult.Position.Z
+            end
+        end
+        return nil, nil, nil
+    else
+        local ray = Camera:ViewportPointToRay(screenPosition.X, screenPosition.Y)
+        local raycastParams = RaycastParams.new()
+        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+        raycastParams.FilterDescendantsInstances = {player.Character, Camera}
+        raycastParams.IgnoreWater = true
+
+        local raycastResult = Workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
+        if raycastResult then
+            local hitPoint = raycastResult.Position
+            return hitPoint.X, hitPoint.Y + 5, hitPoint.Z
+        end
+
+        local directions = {
+            ray.Direction,
+            Vector3.new(ray.Direction.X, ray.Direction.Y - 0.05, ray.Direction.Z),
+            Vector3.new(ray.Direction.X, ray.Direction.Y + 0.05, ray.Direction.Z)
+        }
+        for _, dir in ipairs(directions) do
+            local fallbackResult = Workspace:Raycast(ray.Origin, dir * 1000, raycastParams)
+            if fallbackResult then
+                return fallbackResult.Position.X, fallbackResult.Position.Y + 5, fallbackResult.Position.Z
+            end
+        end
+        return nil, nil, nil
+    end
+end
+
+local function placeTowerAtPosition(towerName, x, y, z)
+    if not towerName or not x or not z then 
+        return false, "Invalid parameters"
+    end
+    local placeY = (y or 80) + 5
+    local success, result = pcall(function()
+        return RemoteFunction:InvokeServer("Troops", "Place", {
+            Rotation = CFrame.new(),
+            Position = Vector3.new(x, placeY, z)
+        }, towerName)
+    end)
+    if success then
+        return true, result
+    else
+        return false, result
+    end
+end
+
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+
+    if input.KeyCode == Enum.KeyCode.Q and not isMobile then
+        if not lastSelectedSlot then
+            placeToggle.BackgroundColor3 = Library.Colors.Danger
+            task.wait(0.2)
+            placeToggle.BackgroundColor3 = placingEnabled and Library.Colors.Success or Library.Colors.Danger
+            return
+        end
+        if not slotFilled[lastSelectedSlot] or not slotNames[lastSelectedSlot] then
+            placeToggle.BackgroundColor3 = Library.Colors.Danger
+            task.wait(0.2)
+            placeToggle.BackgroundColor3 = placingEnabled and Library.Colors.Success or Library.Colors.Danger
+            return
+        end
+        if not placingEnabled then
+            return
+        end
+
+        local mousePos = UIS:GetMouseLocation()
+        local x, y, z = getWorldPositionPrecise(mousePos)
+        if not x or not z then
+            placeToggle.BackgroundColor3 = Library.Colors.Danger
+            task.wait(0.2)
+            placeToggle.BackgroundColor3 = Library.Colors.Success
+            return
+        end
+
+        placeToggle.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+
+        local success, result = placeTowerAtPosition(slotNames[lastSelectedSlot], x, y, z)
+
+        if success then
+            placeToggle.BackgroundColor3 = Library.Colors.Success
+            local originalColor = slotButtons[lastSelectedSlot].BackgroundColor3
+            slotButtons[lastSelectedSlot].BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            task.wait(0.1)
+            slotButtons[lastSelectedSlot].BackgroundColor3 = originalColor
+        else
+            placeToggle.BackgroundColor3 = Library.Colors.Danger
+            task.wait(0.2)
+            placeToggle.BackgroundColor3 = Library.Colors.Success
+        end
+    end
+end)
+
+if isMobile then
+    local lastCameraCFrame = Camera.CFrame
+    local lastCameraMoveTime = tick()
+    local cameraCooldown = 0.2
+
+    RunService.RenderStepped:Connect(function()
+        local currentCFrame = Camera.CFrame
+        if (currentCFrame.Position - lastCameraCFrame.Position).Magnitude > 0.01 or
+           currentCFrame.LookVector:Dot(lastCameraCFrame.LookVector) < 0.9999 then
+            lastCameraMoveTime = tick()
+        end
+        lastCameraCFrame = currentCFrame
+    end)
+
+    local function canPlaceTouch()
+        
