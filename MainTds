@@ -5,7 +5,7 @@ _G.AutoUpgradeConfig = {
     ["EvolvedJuggernaut"] = {{path = 1, count = 4}},
 }
 
-local Library = loadstring(game:HttpGet("https://github.com/jenywexi/-/blob/main/library"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/jenywexi/-/refs/heads/main/library"))()
 if not Library then
     warn("Failed to load UI Library!")
     return
