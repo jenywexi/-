@@ -1,0 +1,85 @@
+_G.AutoPickups = true
+_G.AntiLag = true
+_G.ClaimRewards = true
+_G.AutoSkip = true
+_G.AutoMercenary = true
+_G.MercDistance = 190
+
+local TDS = loadstring(game:HttpGet("https://raw.githubusercontent.com/raxs0420/test/refs/heads/main/library%20new/new%20ui%20test%20test.lua"))()
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/avtryxz/autogutlin/refs/heads/main/autogutlin.lua"))()
+
+-- Ставим 7 траперов
+for i = 1, 7 do
+    TDS:Place("Trapper", 3.636083, 250, 226.444791)
+end
+
+-- Качаем траперы до 1 уровня
+for i = 1, 7 do
+    TDS:Upgrade(i)
+end
+
+-- Ставим Гатлинг
+TDS:Place("Gatling Gun", -2.705148, 250, 206.403676)
+
+-- Качаем Гатлинг до 3 уровня
+for i = 1, 3 do
+    TDS:Upgrade(8)
+end
+
+-- Ставим Firework Technician ПОСЛЕ 3 прокачки Гатлинга
+TDS:Place("Firework Technician", 2.705148, 250, 206.4036767)
+
+-- Качаем Firework Technician до МАКСИМУМА (4 уровня)
+for i = 1, 4 do
+    TDS:Upgrade(11)
+end
+
+-- Докачиваем Гатлинг до 6 уровня (МАКСИМУМ)
+for i = 1, 3 do
+    TDS:Upgrade(8)
+end
+
+-- Ставим ПЕРВУЮ Mercenary Base (будет МАКСИМАЛЬНОГО уровня)
+TDS:Place("Mercenary Base", -4.110585, 250, 155.896353)
+-- Качаем ПЕРВУЮ Mercenary Base до МАКСИМУМА (6 раз)
+for i = 1, 6 do
+    TDS:Upgrade(12)
+end
+
+-- Ставим ВТОРУЮ Mercenary Base (будет 4 уровня)
+TDS:Place("Mercenary Base", -4.110585, 250, 155.896353)
+-- Качаем ВТОРУЮ Mercenary Base ТОЛЬКО до 4 уровня
+for i = 1, 4 do
+    TDS:Upgrade(13)
+end
+
+-- Настройка юнитов для Mercenary Base
+TDS:SetOption(12, "Unit 1", "Riot Guard")
+TDS:SetOption(12, "Unit 2", "Riot Guard")
+TDS:SetOption(12, "Unit 3", "Riot Guard")
+TDS:SetOption(13, "Unit 1", "Riot Guard")
+TDS:SetOption(13, "Unit 2", "Riot Guard")
+TDS:SetOption(13, "Unit 3", "Riot Guard")
+
+-- Теперь ставим 2 хакеров (ПОСЛЕ Mercenary Base)
+TDS:Place("Hacker", -2.840099, 250, 282.345397)
+TDS:Place("Hacker", 3.378773, 250, 268.003313)
+
+-- Качаем хакеров до макс
+for i = 9, 10 do
+    TDS:Upgrade(i)
+    TDS:Upgrade(i)
+end
+
+-- Докачка остальных башен до макс
+TDS:Upgrade(9)
+TDS:Upgrade(9) -- Хакер 1 до макс
+TDS:Upgrade(10)
+TDS:Upgrade(10) -- Хакер 2 до макс
+
+-- Активация способностей
+TDS:Ability(9, "Hologram Tower", {towerPosition = Vector3.new(3.742042, 250, 206.780052), towerToClone = 8}, true)
+TDS:Ability(10, "Hologram Tower", {towerPosition = Vector3.new(-4.536879, 250, 159.547254), towerToClone = 12}, true)
+TDS:Ability(10, "Hologram Tower", {towerPosition = Vector3.new(4.394114, 250, 159.113632), towerToClone = 12}, true)
+TDS:Ability(10, "Hologram Tower", {towerPosition = Vector3.new(4.057164, 250, 165.466261), towerToClone = 12}, true)
